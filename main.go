@@ -7,6 +7,7 @@ import (
 // Handlers are responsible for carrying out your application logic and writing response headers and bodies. Whereas a servemux (also known as a _router_) stores a mapping between the predefined URL paths for your application and the corresponding handlers. Usually you have one servemux for your application containing all your routes.
 
 func main() {
+
 	const filepathRoot = "."
 	const port = "8080"
 
@@ -15,7 +16,8 @@ func main() {
 	// http.FileServer zwraca wbudowany http.Handler
 	// mux.Handle rejestruje servemux żeby zachowywał się jak handler
 	// dla wszystkich requestów pod URL "/"
-	mux.Handle("/", http.FileServer(http.Dir(filepathRoot)))
+	mux.Handle("/app/", http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot))))
+	mux.HandleFunc("/healthz", handlerReadiness)
 
 	// hhtp.server to struct konfigurujący ustawienia serwera
 	srv := &http.Server{
@@ -26,5 +28,10 @@ func main() {
 	log.Printf("Serving files from %s on port: %s\n", filepathRoot, port)
 	log.Fatal(srv.ListenAndServe()) 
 	// po wezwaniu ListenAndServe main() jest blokowane aż serwer nie zostanie zamknięty
+}
 
+func handlerReadiness(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(http.StatusText(http.StatusOK)))
 }
